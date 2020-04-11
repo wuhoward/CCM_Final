@@ -17,7 +17,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
     if save:
         start_time = timeit.default_timer()
     writer = SummaryWriter(opt.log_path)
-    env, num_states, num_actions = create_train_env(index+1)
+    env, num_states, num_actions = create_train_env(index+1, opt)
     local_model = ActorCritic(num_states, num_actions)
     local_icm = IntrinsicCuriosityModule(num_states, num_actions)
     if opt.use_gpu:
@@ -58,6 +58,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         entropies = []
         inv_losses = []
         fwd_losses = []
+        action_cnt = [0] * num_actions
 
         for _ in range(opt.num_local_steps):
             curr_step += 1
@@ -68,6 +69,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
 
             m = Categorical(policy)
             action = m.sample().item()
+            action_cnt[action] += 1
 
             next_state, reward, round_done, stage_done, game_done = env.step(action)
             next_state = torch.from_numpy(next_state)
@@ -134,11 +136,11 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         total_loss = opt.lambda_ * (-actor_loss + critic_loss - opt.sigma * entropy_loss) + curiosity_loss
         writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
         if save:
-            c_loss = curiosity_loss.data.cpu().numpy()
-            t_loss = total_loss.data.cpu().numpy()
+            c_loss = curiosity_loss.item()
+            t_loss = total_loss.item()
             print("Process {}. Episode {}. A3C Loss: {}. ICM Loss: {}. Return: {}".
-		  format(index, curr_episode, t_loss - c_loss, c_loss, R.data.cpu().numpy()))
-            print("A3C Output: {}".format(policy.data.cpu().numpy()))
+		  format(index, curr_episode, t_loss - c_loss, c_loss, R.item()))
+            print("# Actions Tried: {}".format(action_cnt))
         optimizer.zero_grad()
         total_loss.backward()
 

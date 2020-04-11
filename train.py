@@ -27,9 +27,9 @@ def get_args():
     parser.add_argument("--num_global_steps", type=int, default=1e8)
     parser.add_argument("--num_processes", type=int, default=3)
     parser.add_argument("--save_interval", type=int, default=500, help="Number of steps between savings")
-    parser.add_argument("--max_actions", type=int, default=500, help="Maximum repetition steps in test phase")
     parser.add_argument("--log_path", type=str, default="tensorboard/a3c_icm_street_fighter")
     parser.add_argument("--saved_path", type=str, default="trained_models")
+    parser.add_argument("--frame_skip", type=int, default=4)
     parser.add_argument("--use_gpu", action='store_true', default=False)
     args = parser.parse_args()
     return args

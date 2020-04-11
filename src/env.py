@@ -7,26 +7,8 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 os.environ['SDL_AUDIODRIVER'] = "dsp"
 from ple.games.originalgame import originalGame
 from ple import PLE
+import moviepy.editor as mpy
 
-def make_anim(images, fps=60, true_image=False):
-    # create a video from a list of images
-    duration = len(images) / fps
-    import moviepy.editor as mpy
-
-    def make_frame(t):
-        try:
-            x = images[int(len(images) / duration * t)]
-        except:
-            x = images[-1]
-
-        if true_image:
-            return x.astype(np.uint8)
-        else:
-            return ((x + 1) / 2 * 255).astype(np.uint8)
-
-    clip = mpy.VideoClip(make_frame, duration=duration)
-    clip.fps = fps
-    return clip
 
 def process_frame(frame):
     # Convert to a gray-scale image
@@ -38,10 +20,10 @@ def process_frame(frame):
         return np.zeros((1, 168, 168))
 
 class MonsterKongEnv(object):
-    def __init__(self, index, output_path = None):
+    def __init__(self, index, opt, output_path = None):
         self.game = originalGame()
         self.env = PLE(self.game, fps=30, display_screen=False, 
-                       rng=np.random.RandomState(index)) # one map per game for now, no randomness
+                       rng=np.random.RandomState(index), frame_skip=opt.frame_skip) # one map per game for now, no randomness
         self.train_frames = []
         self.record_frames = []
         self.reset(False, False, True)
@@ -60,9 +42,6 @@ class MonsterKongEnv(object):
         if not game_done:
             frames = np.concatenate([frame for frame in self.train_frames[-3:]], 0)[None, :, :, :].astype(np.float32)
         else:
-            if self.output_path:
-                clip = make_anim(self.record_frames, fps=60, true_image=True).rotate(-90)
-                clip.write_videofile("test.webm", fps=60)
             frames = np.zeros((1, 3, 168, 168), dtype=np.float32)
 
         return frames, reward, False, False, game_done
@@ -73,9 +52,29 @@ class MonsterKongEnv(object):
         self.train_frames = [process_frame(self.env.getScreenRGB())] * 3
         self.record_frames = [self.env.getScreenRGB()]
         return np.zeros((1, 3, 168, 168), dtype=np.float32)
+
+    def make_anim(self, fps=10, true_image=True):
+        # create a video from a list of images
+        images = self.record_frames
+        duration = len(images) / fps
     
-def create_train_env(index, output_path=None):
+        def make_frame(t):
+            try:
+                x = images[int(len(images) / duration * t)]
+            except:
+                x = images[-1]
+    
+            if true_image:
+                return x.astype(np.uint8)
+            else:
+                return ((x + 1) / 2 * 255).astype(np.uint8)
+    
+        clip = mpy.VideoClip(make_frame, duration=duration)
+        clip.fps = fps
+        clip.rotate(-90).write_videofile(self.output_path, fps=fps)
+    
+def create_train_env(index, opt, output_path=None):
     num_inputs = 3
     num_actions = 6
-    env = MonsterKongEnv(index, output_path)
+    env = MonsterKongEnv(index, opt, output_path)
     return env, num_inputs, num_actions
