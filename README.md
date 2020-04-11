@@ -8,8 +8,10 @@ This code is modified from https://github.com/uvipen/Street-fighter-A3C-ICM-pyto
 4. pip install -e .
 
 ### Notes:
-* I found that training speed on CPU is on par with GPU. Probably because of larger CPU memory and the on-policy training mechanism. CIMS's [crunchy servers](https://cims.nyu.edu/webapps/content/systems/resources/computeservers) seems to good choices
+* I found that training speed on CPU is on par with GPU. Probably because of larger CPU memory and the on-policy training mechanism. CIMS's [crunchy servers](https://cims.nyu.edu/webapps/content/systems/resources/computeservers) seems to be good choices
 * The initial position of the player can be changed by modifying self.playerPosition in board.py. However, I haven't figured out how to map coordinates in map.txt to the real position. So I currently just modify the the values and output the screen to see the effects.
-* The original paper of ICM stated that it takes A3C-ICM 4M steps to converge while training on VizDoom. So, I estimate it will takes more than 12 hours
-* The current ICM loss dosen't change much during training. This might be a potential bug
-* Previous Atari papers use 4 for [frame_skip](https://pygame-learning-environment.readthedocs.io/en/latest/modules/ple.html). I'm still trying to figure out what's the proper setting.
+* The ICM paper states that A3C-ICM takes ~7M training steps to converge while training on VizDoom. So, I estimate our task will need ~18 hours.
+* The entropy of the ICM loss can be deemed as the signal of the training progress. The current ICM loss seems slightly too large. We could adjust the value of lambda to balance the losses.
+* The currently environment use a sparse reward (1 for winning). We could try to play with different settings.
+* The ICM paper resizes the images to 42×42, whereas our current implementation uses 168×168. Reducing the sizes or even changing the network architecutre might speedup the convergence.
+* Previous Atari papers use 4 for [frame_skip](https://pygame-learning-environment.readthedocs.io/en/latest/modules/ple.html). I noticed that frame_skip > 1 might prevent environment from reaching the game_over state sometimes.
