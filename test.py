@@ -17,7 +17,7 @@ def get_args():
         """Implementation of model described in the paper: Curiosity-driven Exploration by Self-supervised Prediction for Street Fighter""")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--output_path", type=str, default="output")
-    parser.add_argument("--max_actions", type=int, default=50, help="Maximum repetition steps in test phase")
+    parser.add_argument("--max_steps", type=int, default=300, help="Maximum steps per episode")
     parser.add_argument("--frame_skip", type=int, default=1)
     args = parser.parse_args()
     return args
@@ -27,7 +27,7 @@ def test(opt):
     torch.manual_seed(123)
     if not os.path.isdir(opt.output_path):
         os.makedirs(opt.output_path)
-    env, num_states, num_actions = create_train_env(1, opt, "{}/test.webm".format(opt.output_path))
+    env, num_states, num_actions = create_train_env(1, opt, "{}/test.mp4".format(opt.output_path))
     model = ActorCritic(num_states, num_actions)
     if torch.cuda.is_available():
         model.load_state_dict(torch.load("{}/a3c_street_fighter".format(opt.saved_path)))
@@ -61,7 +61,7 @@ def test(opt):
         state = torch.from_numpy(state)
         if round_done or stage_done:
             state = torch.from_numpy(env.reset(round_done, stage_done, game_done))
-        if game_done or num_action == opt.max_actions:
+        if game_done or num_action == opt.max_steps:
             env.make_anim()
             print("Game over")
             break

@@ -17,7 +17,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
     if save:
         start_time = timeit.default_timer()
     writer = SummaryWriter(opt.log_path)
-    env, num_states, num_actions = create_train_env(index+1, opt)
+    env, num_states, num_actions = create_train_env(index+1, opt, "{}/test.mp4".format(opt.output_path))
     local_model = ActorCritic(num_states, num_actions)
     local_icm = IntrinsicCuriosityModule(num_states, num_actions)
     if opt.use_gpu:
@@ -42,6 +42,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
                            "{}/icm_street_fighter".format(opt.saved_path))
         curr_episode += 1
         local_model.load_state_dict(global_model.state_dict())
+        local_icm.load_state_dict(global_icm.state_dict())
         if round_done or stage_done or game_done:
             h_0 = torch.zeros((1, 1024), dtype=torch.float)
             c_0 = torch.zeros((1, 1024), dtype=torch.float)
@@ -59,8 +60,10 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         inv_losses = []
         fwd_losses = []
         action_cnt = [0] * num_actions
+        highest_position = env.game.newGame.Players[0].getPosition()
+        first_policy = None
 
-        for _ in range(opt.num_local_steps):
+        for i in range(opt.num_local_steps):
             curr_step += 1
             logits, value, h_0, c_0 = local_model(state, h_0, c_0)
             policy = F.softmax(logits, dim=1)
@@ -70,8 +73,11 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
             m = Categorical(policy)
             action = m.sample().item()
             action_cnt[action] += 1
+            if i == 0:
+                first_policy = policy
 
             next_state, reward, round_done, stage_done, game_done = env.step(action)
+            highest_position = max(highest_position, env.game.newGame.Players[0].getPosition(), key=lambda p: -p[1])
             next_state = torch.from_numpy(next_state)
             if opt.use_gpu:
                 next_state = next_state.cuda()
@@ -88,7 +94,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
             intrinsic_reward = opt.eta * fwd_loss.detach()
             reward += intrinsic_reward
 
-            if curr_step > opt.num_global_steps:
+            if curr_step >= opt.max_steps:
                 round_done, stage_done, game_done = False, False, True
 
             if round_done or stage_done or game_done:
@@ -138,9 +144,10 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         if save:
             c_loss = curiosity_loss.item()
             t_loss = total_loss.item()
-            print("Process {}. Episode {}. A3C Loss: {}. ICM Loss: {}. Return: {}".
+            print("Process {}. Episode {}. A3C Loss: {}. ICM Loss: {}. R: {}".
 		  format(index, curr_episode, t_loss - c_loss, c_loss, R.item()))
-            print("# Actions Tried: {}".format(action_cnt))
+            print("# Actions Tried: {}. Highest Position: {}. First Policy: {}".
+                  format(action_cnt, highest_position, first_policy.cpu().detach().numpy()))
         optimizer.zero_grad()
         total_loss.backward()
 

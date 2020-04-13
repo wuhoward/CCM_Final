@@ -27,10 +27,7 @@ class MonsterKongEnv(object):
         self.train_frames = []
         self.record_frames = []
         self.reset(False, False, True)
-        if output_path:
-            self.output_path = output_path
-        else:
-            self.output_path = None
+        self.output_path = output_path
 
     def step(self, action):
         reward = self.env.act(self.env.getActionSet()[action])
