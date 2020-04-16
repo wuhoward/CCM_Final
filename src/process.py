@@ -44,8 +44,8 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         local_model.load_state_dict(global_model.state_dict())
         local_icm.load_state_dict(global_icm.state_dict())
         if round_done or stage_done or game_done:
-            h_0 = torch.zeros((1, 1024), dtype=torch.float)
-            c_0 = torch.zeros((1, 1024), dtype=torch.float)
+            h_0 = torch.zeros((1, 256), dtype=torch.float)
+            c_0 = torch.zeros((1, 256), dtype=torch.float)
         else:
             h_0 = h_0.detach()
             c_0 = c_0.detach()

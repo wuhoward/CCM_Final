@@ -14,10 +14,10 @@ def process_frame(frame):
     # Convert to a gray-scale image
     if frame is not None:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        frame = cv2.resize(frame, (168, 168))[None, :, :] / 255.
+        frame = cv2.resize(frame, (42, 42))[None, :, :] / 255.
         return frame
     else:
-        return np.zeros((1, 168, 168))
+        return np.zeros((1, 42, 42))
 
 class MonsterKongEnv(object):
     def __init__(self, index, opt, output_path = None):
@@ -39,7 +39,7 @@ class MonsterKongEnv(object):
         if not game_done:
             frames = np.concatenate([frame for frame in self.train_frames[-3:]], 0)[None, :, :, :].astype(np.float32)
         else:
-            frames = np.zeros((1, 3, 168, 168), dtype=np.float32)
+            frames = np.zeros((1, 3, 42, 42), dtype=np.float32)
 
         return frames, reward, False, False, game_done
 
@@ -48,7 +48,7 @@ class MonsterKongEnv(object):
         self.env.act(None) # dummy action to avoid black screen
         self.train_frames = [process_frame(self.env.getScreenRGB())] * 3
         self.record_frames = [self.env.getScreenRGB()]
-        return np.zeros((1, 3, 168, 168), dtype=np.float32)
+        return np.zeros((1, 3, 42, 42), dtype=np.float32)
 
     def make_anim(self, fps=10, true_image=True):
         # create a video from a list of images

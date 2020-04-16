@@ -8,16 +8,16 @@ import torch.nn as nn
 class BaseConv(nn.Module):
     def __init__(self, num_inputs):
         super(BaseConv, self).__init__()
-        self.conv = nn.Sequential(nn.Conv2d(num_inputs, 64, 3, stride=2, padding=1),
+        self.conv = nn.Sequential(nn.Conv2d(num_inputs, 32, 3, stride=2, padding=1),
                                   nn.ReLU(),
-                                  nn.Conv2d(64, 64, 3, stride=2, padding=1),
+                                  nn.Conv2d(32, 32, 3, stride=2, padding=1),
                                   nn.ReLU(),
-                                  nn.Conv2d(64, 64, 3, stride=2, padding=1),
+                                  nn.Conv2d(32, 32, 3, stride=2, padding=1),
                                   nn.ReLU(),
-                                  nn.Conv2d(64, 64, 3, stride=2, padding=1),
+                                  nn.Conv2d(32, 32, 3, stride=2, padding=1),
                                   nn.ReLU(),
-                                  nn.Conv2d(64, 64, 3, stride=2, padding=1),
-                                  nn.ReLU()
+                                  #nn.Conv2d(32, 32, 3, stride=2, padding=1),
+                                  #nn.ReLU()
                                   )
 
     def forward(self, x):
@@ -28,9 +28,9 @@ class ActorCritic(nn.Module):
     def __init__(self, num_inputs, num_actions):
         super(ActorCritic, self).__init__()
         self.conv = BaseConv(num_inputs)
-        self.lstm = nn.LSTMCell(64 * 6 * 6, 1024)
-        self.critic_linear = nn.Linear(1024, 1)
-        self.actor_linear = nn.Linear(1024, num_actions)
+        self.lstm = nn.LSTMCell(32 * 3 * 3, 256)
+        self.critic_linear = nn.Linear(256, 1)
+        self.actor_linear = nn.Linear(256, num_actions)
         self._initialize_weights()
 
     def _initialize_weights(self):
@@ -53,16 +53,16 @@ class IntrinsicCuriosityModule(nn.Module):
     def __init__(self, num_inputs, num_actions):
         super(IntrinsicCuriosityModule, self).__init__()
         self.conv = BaseConv(num_inputs)
-        self.feature_size = 64 * 6 * 6
+        self.feature_size = 32 * 3 * 3
         self.inverse_net = nn.Sequential(
-            nn.Linear(self.feature_size * 2, 1024),
+            nn.Linear(self.feature_size * 2, 256),
             nn.LeakyReLU(),
-            nn.Linear(1024, num_actions)
+            nn.Linear(256, num_actions)
         )
         self.forward_net = nn.Sequential(
-            nn.Linear(self.feature_size + num_actions, 1024),
+            nn.Linear(self.feature_size + num_actions, 256),
             nn.LeakyReLU(),
-            nn.Linear(1024, self.feature_size)
+            nn.Linear(256, self.feature_size)
         )
         self._initialize_weights()
 
