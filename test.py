@@ -18,22 +18,24 @@ def get_args():
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--output_path", type=str, default="output")
     parser.add_argument("--max_steps", type=int, default=300, help="Maximum steps per episode")
+    parser.add_argument("--exp", type=str, default="prior_knowledge", help="Desired name for the experiment")
     parser.add_argument("--frame_skip", type=int, default=1)
     args = parser.parse_args()
     return args
 
-# (224, 384, 3)
 def test(opt):
     torch.manual_seed(123)
+    opt.saved_path = opt.saved_path + "/" + opt.exp
+    opt.output_path = opt.output_path + "/" + opt.exp
     if not os.path.isdir(opt.output_path):
         os.makedirs(opt.output_path)
     env, num_states, num_actions = create_train_env(1, opt, "{}/test.mp4".format(opt.output_path))
     model = ActorCritic(num_states, num_actions)
     if torch.cuda.is_available():
-        model.load_state_dict(torch.load("{}/a3c_street_fighter".format(opt.saved_path)))
+        model.load_state_dict(torch.load("{}/a3c".format(opt.saved_path)))
         model.cuda()
     else:
-        model.load_state_dict(torch.load("{}/a3c_street_fighter".format(opt.saved_path),
+        model.load_state_dict(torch.load("{}/a3c".format(opt.saved_path),
                                          map_location=lambda storage, loc: storage))
     model.eval()
     state = torch.from_numpy(env.reset(False, False, True))
@@ -55,7 +57,6 @@ def test(opt):
         policy = F.softmax(logits, dim=1)
         action = torch.argmax(policy).item()
         action = int(action)
-        print("action: ", action)
         num_action += 1
         state, reward, round_done, stage_done, game_done = env.step(action)
         state = torch.from_numpy(state)

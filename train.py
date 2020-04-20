@@ -26,11 +26,12 @@ def get_args():
     parser.add_argument("--num_local_steps", type=int, default=50)
     parser.add_argument("--num_global_steps", type=int, default=1e8)
     parser.add_argument("--max_steps", type=int, default=300, help="Maximum steps per episode")
-    parser.add_argument("--num_processes", type=int, default=3)
+    parser.add_argument("--num_processes", type=int, default=32)
     parser.add_argument("--save_interval", type=int, default=500, help="Number of steps between savings")
-    parser.add_argument("--log_path", type=str, default="tensorboard/a3c_icm_street_fighter")
-    parser.add_argument("--saved_path", type=str, default="trained_models")
+    parser.add_argument("--log_path", type=str, default="tensorboard")
     parser.add_argument("--output_path", type=str, default="output")
+    parser.add_argument("--saved_path", type=str, default="trained_models")
+    parser.add_argument("--exp", type=str, default="prior_knowledge", help="Desired name for the experiment")
     parser.add_argument("--frame_skip", type=int, default=4)
     parser.add_argument("--use_gpu", action='store_true', default=False)
     args = parser.parse_args()
@@ -39,6 +40,9 @@ def get_args():
 
 def train(opt):
     torch.manual_seed(123)
+    opt.log_path = opt.log_path + "/" + opt.exp
+    opt.saved_path = opt.saved_path + "/" + opt.exp
+    opt.output_path = opt.output_path + "/" + opt.exp
     if os.path.isdir(opt.log_path):
         shutil.rmtree(opt.log_path)
     os.makedirs(opt.log_path)

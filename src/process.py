@@ -37,9 +37,9 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         if save:
             if curr_episode % opt.save_interval == 0 and curr_episode > 0:
                 torch.save(global_model.state_dict(),
-                           "{}/a3c_street_fighter".format(opt.saved_path))
+                           "{}/a3c".format(opt.saved_path))
                 torch.save(global_icm.state_dict(),
-                           "{}/icm_street_fighter".format(opt.saved_path))
+                           "{}/icm".format(opt.saved_path))
         curr_episode += 1
         local_model.load_state_dict(global_model.state_dict())
         local_icm.load_state_dict(global_icm.state_dict())
