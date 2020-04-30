@@ -2,6 +2,7 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 
+import os
 import torch
 from src.env import create_train_env
 from src.model import ActorCritic, IntrinsicCuriosityModule
@@ -32,15 +33,21 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         state = state.cuda()
     round_done, stage_done, game_done = False, False, True
     curr_step = 0
+    total_step = 0
     curr_episode = 0
+    return_eps = 0
+    next_save = False
     while True:
-        if save:
-            if curr_episode % opt.save_interval == 0 and curr_episode > 0:
-                torch.save(global_model.state_dict(),
-                           "{}/a3c".format(opt.saved_path))
-                torch.save(global_icm.state_dict(),
-                           "{}/icm".format(opt.saved_path))
-        curr_episode += 1
+        if save and next_save:
+            next_save = False
+            saved_path = opt.saved_path + "/" + str(total_step // 1000) + "K"
+            if not os.path.isdir(saved_path):
+                os.makedirs(saved_path)
+            torch.save(global_model.state_dict(),
+                       "{}/a3c".format(saved_path))
+            torch.save(global_icm.state_dict(),
+                           "{}/icm".format(saved_path))
+        #curr_episode += 1
         local_model.load_state_dict(global_model.state_dict())
         local_icm.load_state_dict(global_icm.state_dict())
         if round_done or stage_done or game_done:
@@ -64,6 +71,8 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
         first_policy = None
 
         for i in range(opt.num_local_steps):
+            total_step += 1
+            if total_step % opt.save_interval == 0 and total_step > 0: next_save = True
             curr_step += 1
             logits, value, h_0, c_0 = local_model(state, h_0, c_0)
             policy = F.softmax(logits, dim=1)
@@ -77,6 +86,7 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
                 first_policy = policy
 
             next_state, reward, round_done, stage_done, game_done = env.step(action)
+            return_eps += reward
             highest_position = max(highest_position, env.game.newGame.Players[0].getPosition(), key=lambda p: -p[1])
             next_state = torch.from_numpy(next_state)
             if opt.use_gpu:
@@ -99,9 +109,13 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
 
             if round_done or stage_done or game_done:
                 curr_step = 0
+                curr_episode += 1
                 next_state = torch.from_numpy(env.reset(round_done, stage_done, game_done))
                 if opt.use_gpu:
                     next_state = next_state.cuda()
+                if save: 
+                    writer.add_scalar("Train_{}/Return".format(index), return_eps, curr_episode)
+                return_eps = 0
 
             values.append(value)
             log_policies.append(log_policy[0, action])
@@ -140,12 +154,12 @@ def local_train(index, opt, global_model, global_icm, optimizer, save=False):
             curiosity_loss = curiosity_loss + (1 - opt.beta) * inv + opt.beta * fwd
 
         total_loss = opt.lambda_ * (-actor_loss + critic_loss - opt.sigma * entropy_loss) + curiosity_loss
-        writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
         if save:
+            writer.add_scalar("Train_{}/Loss".format(index), total_loss, total_step)
             c_loss = curiosity_loss.item()
             t_loss = total_loss.item()
-            print("Process {}. Episode {}. A3C Loss: {}. ICM Loss: {}. R: {}".
-		  format(index, curr_episode, t_loss - c_loss, c_loss, R.item()))
+            print("Process {}. Episode {}. A3C Loss: {}. ICM Loss: {}.".
+		  format(index, curr_episode, t_loss - c_loss, c_loss))
             print("# Actions Tried: {}. Highest Position: {}. First Policy: {}".
                   format(action_cnt, highest_position, first_policy.cpu().detach().numpy()))
         optimizer.zero_grad()

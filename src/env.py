@@ -21,9 +21,10 @@ def process_frame(frame):
 
 class MonsterKongEnv(object):
     def __init__(self, index, opt, output_path = None):
-        self.game = originalGame()
-        self.env = PLE(self.game, fps=30, display_screen=False, 
-                       rng=np.random.RandomState(index), frame_skip=opt.frame_skip) # one map per game for now, no randomness
+        self.game = originalGame("map.txt", None)
+        rewards = { "positive": 0.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 1.0 }
+        self.env = PLE(self.game, fps=30, reward_values = rewards, display_screen=False, 
+                       frame_skip=opt.frame_skip)
         self.train_frames = []
         self.record_frames = []
         self.reset(False, False, True)
@@ -72,6 +73,6 @@ class MonsterKongEnv(object):
     
 def create_train_env(index, opt, output_path=None):
     num_inputs = 3
-    num_actions = 6
+    num_actions = opt.num_actions 
     env = MonsterKongEnv(index, opt, output_path)
     return env, num_inputs, num_actions

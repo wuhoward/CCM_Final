@@ -9,15 +9,13 @@ class BaseConv(nn.Module):
     def __init__(self, num_inputs):
         super(BaseConv, self).__init__()
         self.conv = nn.Sequential(nn.Conv2d(num_inputs, 32, 3, stride=2, padding=1),
-                                  nn.ReLU(),
+                                  nn.ELU(),
                                   nn.Conv2d(32, 32, 3, stride=2, padding=1),
-                                  nn.ReLU(),
+                                  nn.ELU(),
                                   nn.Conv2d(32, 32, 3, stride=2, padding=1),
-                                  nn.ReLU(),
+                                  nn.ELU(),
                                   nn.Conv2d(32, 32, 3, stride=2, padding=1),
-                                  nn.ReLU(),
-                                  #nn.Conv2d(32, 32, 3, stride=2, padding=1),
-                                  #nn.ReLU()
+                                  nn.ELU(),
                                   )
 
     def forward(self, x):
@@ -56,12 +54,12 @@ class IntrinsicCuriosityModule(nn.Module):
         self.feature_size = 32 * 3 * 3
         self.inverse_net = nn.Sequential(
             nn.Linear(self.feature_size * 2, 256),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(256, num_actions)
         )
         self.forward_net = nn.Sequential(
             nn.Linear(self.feature_size + num_actions, 256),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(256, self.feature_size)
         )
         self._initialize_weights()

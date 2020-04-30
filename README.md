@@ -3,15 +3,19 @@ This code is modified from https://github.com/uvipen/Street-fighter-A3C-ICM-pyto
 
 ### TL;DR 
 ```bash
-# default on CPUs
-python train.py
-python test.py
-# on GPUs
-python train.py --num_processes 4 --exp my_exp --use_gpu
-python test.py --exp my_exp
+# running on CPUs
+python train.py --num_processes 16 --max_steps --exp my_exp
+python test.py --resume_path trained_models/my_exp/500K
+# visualize with tensorboard
+tensorboard --logdir tensorboard --bind_all &
 ```
 
 ### Notes:
-* I found that training speed on CPU is on par with GPU. Probably because of larger CPU memory and the on-policy training mechanism. CIMS's [crunchy servers](https://cims.nyu.edu/webapps/content/systems/resources/computeservers) seems to be good choices
+* I found that training speed on CPU is on par with GPU. Probably because of larger CPU memory and the on-policy training mechanism. CIMS's [crunchy servers](https://cims.nyu.edu/webapps/content/systems/resources/computeservers) seems to be good choices.
+* Not recommend using to many processes, the A3C uses 16 processes.
+* --max_steps needs to be greater than 500
+* Adding negative rewards doesn't work on map.txt. It's worth looking into how to change the hyperparameters to make it work.
 * The initial position of the player can be changed by modifying self.playerPosition in board.py. However, I haven't figured out how to map coordinates in map.txt to the real position. So I currently just modify the the values and output the screen to see the effects.
-* The currently game environment use a sparse reward (1 for winning). We could try to play with different settings.
+
+### Known Bugs:
+* Tensorboard cannot show results from every process, probably due to race condition?
