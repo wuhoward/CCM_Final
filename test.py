@@ -17,6 +17,7 @@ def get_args():
         """Implementation of model described in the paper: Curiosity-driven Exploration by Self-supervised Prediction for Street Fighter""")
     parser.add_argument("--resume_path", type=str, default="trained_models")
     parser.add_argument("--output_path", type=str, default="output")
+    parser.add_argument("--map_file", type=str, default="map.txt")
     parser.add_argument("--max_steps", type=int, default=300, help="Maximum steps per episode")
     parser.add_argument("--frame_skip", type=int, default=1)
     parser.add_argument("--num_actions", type=int, default=6)

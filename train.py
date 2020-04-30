@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument("--output_path", type=str, default="output")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--resume_path", type=str)
+    parser.add_argument("--map_file", type=str, default="map.txt")
     parser.add_argument("--exp", type=str, default="prior_knowledge", help="Desired name for the experiment")
     parser.add_argument("--frame_skip", type=int, default=4)
     parser.add_argument("--num_actions", type=int, default=6)

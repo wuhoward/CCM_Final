@@ -21,7 +21,13 @@ def process_frame(frame):
 
 class MonsterKongEnv(object):
     def __init__(self, index, opt, output_path = None):
-        self.game = originalGame("map.txt", None)
+        if 'fire' in opt.map_file:
+            exp = 'fire'
+        elif 'ladder' in opt.map_file:
+            exp = 'ladder'
+        else:
+            exp = None
+        self.game = originalGame(opt.map_file, experiment = exp)
         rewards = { "positive": 0.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 1.0 }
         self.env = PLE(self.game, fps=30, reward_values = rewards, display_screen=False, 
                        frame_skip=opt.frame_skip)
