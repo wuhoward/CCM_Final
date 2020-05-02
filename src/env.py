@@ -7,6 +7,7 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 os.environ['SDL_AUDIODRIVER'] = "dsp"
 from ple.games.originalgame import originalGame
 from ple import PLE
+import random
 import moviepy.editor as mpy
 
 
@@ -21,16 +22,18 @@ def process_frame(frame):
 
 class MonsterKongEnv(object):
     def __init__(self, index, opt, output_path = None):
-        if 'fire' in opt.map_file:
+        '''if 'fire' in opt.map_file:
             exp = 'fire'
         elif 'ladder' in opt.map_file:
             exp = 'ladder'
         else:
             exp = None
         self.game = originalGame(opt.map_file, experiment = exp)
-        rewards = { "positive": 0.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 1.0 }
-        self.env = PLE(self.game, fps=30, reward_values = rewards, display_screen=False, 
-                       frame_skip=opt.frame_skip)
+        self.env = PLE(self.game, fps=30, reward_values = self.rewards, display_screen=False, 
+                       frame_skip=opt.frame_skip)'''
+        self.opt = opt
+        self.rewards = { "positive": 0.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 1.0 }
+        self.frame_skip = opt.frame_skip
         self.train_frames = []
         self.record_frames = []
         self.reset(False, False, True)
@@ -51,6 +54,14 @@ class MonsterKongEnv(object):
         return frames, reward, False, False, game_done
 
     def reset(self, round_done, stage_done, game_done):
+        list_maps = ['../RL-PriorKnowledge/ladder-rohan1.txt', '../RL-PriorKnowledge/ladder-rohan3.txt',
+                     '../RL-PriorKnowledge/ladder-rohan4.txt', '../RL-PriorKnowledge/ladder-rohan5.txt']
+        map_file = random.choice(list_maps)
+        if self.opt.map_file is not None: # Use fixed map if provided
+            map_file = self.opt.map_file
+        self.game = originalGame(map_file, experiment = 'ladder')
+        self.env = PLE(self.game, fps=30, reward_values = self.rewards, display_screen=False, 
+                       frame_skip=self.frame_skip)
         self.env.reset_game()
         self.env.act(None) # dummy action to avoid black screen
         self.train_frames = [process_frame(self.env.getScreenRGB())] * 3
